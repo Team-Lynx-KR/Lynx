@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -20,6 +20,18 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
+  // DevTools 콘솔 에러 필터링 (Autofill 관련 경고 무시)
+  mainWindow.webContents.on('console-message', (event, _level, message) => {
+    if (message.includes('Autofill.enable') || message.includes('Autofill.setAddresses')) {
+      event.preventDefault()
+    }
+  })
+
+  // 개발 모드에서 DevTools 자동 열기
+  if (is.dev) {
+    mainWindow.webContents.openDevTools()
+  }
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -48,9 +60,6 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
 

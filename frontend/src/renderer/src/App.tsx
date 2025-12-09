@@ -1,34 +1,19 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { HashRouter, Routes, Route } from 'react-router-dom'
+import { useAuthStore } from './store/AuthStore' // Zustand 스토어 임포트
+import Login from './pages/Login'
+import Home from './pages/Home'
 
 function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  // Zustand에서 '로그인 여부' 상태만 구독 (useEffect 필요 없음)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    // Electron에서는 BrowserRouter보다 HashRouter가 안전합니다 (새로고침 이슈 방지)
+    <HashRouter>
+      <Routes>
+        <Route path="*" element={isAuthenticated ? <Home /> : <Login />} />
+      </Routes>
+    </HashRouter>
   )
 }
 
