@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lynx-db
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      TZ: Asia/Seoul
+    volumes:
+      - ./db_data:/var/lib/mysql
+    # 한글 깨짐 방지 설정
+    command: 
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - lynx-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lynx-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      DB_HOST: mysql      # 도커 네트워크상 서비스 이름
+      DB_PORT: 3306
+      DB_USERNAME: ${MYSQL_DB_USERNAME}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      DB_DATABASE: ${MYSQL_DATABASE}
+    depends_on:
+      - mysql # DB가 먼저 켜져야 백엔드가 켜짐
+    networks:
+      - lynx-network
+
+# -----------------------------
+# Networks
+# -----------------------------
+networks:
+  lynx-network:
+    driver: bridge
