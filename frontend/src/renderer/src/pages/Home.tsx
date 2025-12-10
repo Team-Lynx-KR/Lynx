@@ -1,12 +1,22 @@
 import { useAuthStore } from '@renderer/store/AuthStore'
+import { client } from '@renderer/api/client'
+import { useState } from 'react'
 
 function Home(): React.JSX.Element {
   const logout = useAuthStore((state) => state.logout)
+  const [profileResult, setProfileResult] = useState<string>('')
 
   const handleLogout = () => {
-    // 이것만 실행하면 isAuthenticated가 false로 바뀌고,
-    // App.tsx가 알아서 로그인 화면으로 전환해줍니다.
     logout()
+  }
+
+  const handleGetProfile = async () => {
+    try {
+      const response = await client.get('/api/auth/profile')
+      setProfileResult(JSON.stringify(response.data, null, 2))
+    } catch (error: any) {
+      setProfileResult(`에러: ${error.response?.data?.message || error.message}`)
+    }
   }
 
   return (
@@ -21,6 +31,14 @@ function Home(): React.JSX.Element {
 
         <div className="home-card">
           <p className="home-welcome">환영합니다!</p>
+          <button onClick={handleGetProfile} style={{ marginTop: '20px', padding: '10px 20px' }}>
+            프로필 조회
+          </button>
+          {profileResult && (
+            <pre style={{ marginTop: '20px', padding: '10px', background: 'black', color: 'white', borderRadius: '4px', whiteSpace: 'pre-wrap' }}>
+              {profileResult}
+            </pre>
+          )}
         </div>
       </div>
     </div>

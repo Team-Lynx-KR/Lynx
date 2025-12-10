@@ -6,14 +6,12 @@ import { client } from '../api/client'
 function Login(): React.JSX.Element {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   
   const navigate = useNavigate() // 회원가입 페이지 이동할 때만 씀
   const login = useAuthStore((state) => state.login) // ✅ 스토어에서 로그인 함수 가져오기
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
 
     try {
       const response = await client.post('/api/auth/login', { email, password });
@@ -23,18 +21,15 @@ function Login(): React.JSX.Element {
       
       if (accessToken && refreshToken) {
         login(accessToken, refreshToken);
-        // App.tsx가 isAuthenticated: true를 감지하고 즉시 <Home />으로 화면을 교체함
       } else {
-        setError('토큰을 받지 못했습니다');
+        alert('토큰을 받지 못했습니다');
       }
     } catch (err: any) {
       // 에러 처리
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else if (err.response?.status === 401) {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다');
+      if (err.response?.status === 401) {
+        alert('이메일 또는 비밀번호가 올바르지 않습니다');
       } else {
-        setError('로그인 중 오류가 발생했습니다');
+        alert('로그인 중 오류가 발생했습니다');
       }
     }
   }
@@ -74,10 +69,6 @@ function Login(): React.JSX.Element {
               placeholder="비밀번호를 입력하세요"
             />
           </div>
-
-          {error && (
-            <div className="error-message">{error}</div>
-          )}
 
           <button type="submit" className="login-button">
             로그인

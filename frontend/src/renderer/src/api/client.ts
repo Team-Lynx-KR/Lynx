@@ -11,9 +11,8 @@ export const client = axios.create({
   withCredentials: true,
 });
 
-// 1. 요청 인터셉터 (그대로)
+// 1. 요청 인터셉터
 client.interceptors.request.use((config) => {
-  // AuthState(타입)가 아니라 useAuthStore(변수)를 써야 함
   const accessToken = useAuthStore.getState().accessToken;
   
   if (accessToken && config.headers) {
@@ -22,33 +21,32 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// 2. 응답 인터셉터 (핵심 수정)
+// 2. 응답 인터셉터
 client.interceptors.response.use(
   (response) => response,
-  async (error) => { // 👈 async 추가 필수!
+  async (error) => {
     const { config, response } = error;
 
-    // 401 에러이고, 아직 재시도 안 한 요청일 때만 실행
+    // 401 에러이고, 처음 재시도 요청일 때만 실행
     if (response?.status === 401 && !config._retry) {
-      config._retry = true; // 👈 무한루프 방지 플래그
+      config._retry = true;
 
       try {
         const refreshToken = useAuthStore.getState().refreshToken;
         
         if (refreshToken) {
-          // 1. 토큰 재발급 요청 (client 대신 쌩 axios 사용 추천 - 인터셉터 안 타게)
+          // 1. 토큰 재발급 요청
           const res = await axios.post(`${baseURL}/api/auth/refresh`, { refreshToken });
           
-          // 2. 스토어 업데이트 (login 함수 사용)
+          // 2. 스토어 업데이트
           const { accessToken: newAccess, refreshToken: newRefresh } = res.data;
           useAuthStore.getState().login(newAccess, newRefresh);
 
-          // 3. 원래 요청 헤더 교체 후 재전송 👈 이게 빠졌었음
+          // 3. 원래 요청 헤더 교체 후 재전송
           config.headers.Authorization = `Bearer ${newAccess}`;
           return client(config);
         }
       } catch (refreshError) {
-        // 재발급 실패하면 로그아웃
         useAuthStore.getState().logout();
       }
     }

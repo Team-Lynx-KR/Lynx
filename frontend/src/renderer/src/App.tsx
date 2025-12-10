@@ -1,17 +1,28 @@
-import { HashRouter, Routes, Route } from 'react-router-dom'
-import { useAuthStore } from './store/AuthStore' // Zustand 스토어 임포트
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuthStore } from './store/AuthStore'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 import Home from './pages/Home'
 
 function App(): React.JSX.Element {
-  // Zustand에서 '로그인 여부' 상태만 구독 (useEffect 필요 없음)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   return (
-    // Electron에서는 BrowserRouter보다 HashRouter가 안전합니다 (새로고침 이슈 방지)
     <HashRouter>
       <Routes>
-        <Route path="*" element={isAuthenticated ? <Home /> : <Login />} />
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Navigate to="/home" replace /> : <Login />}
+        />
+        <Route
+          path="/signup"
+          element={isAuthenticated ? <Navigate to="/home" replace /> : <Signup />}
+        />
+        <Route
+          path="/home"
+          element={isAuthenticated ? <Home /> : <Navigate to="/login" replace />}
+        />
+        <Route path="*" element={<Navigate to={isAuthenticated ? '/home' : '/login'} replace />} />
       </Routes>
     </HashRouter>
   )
